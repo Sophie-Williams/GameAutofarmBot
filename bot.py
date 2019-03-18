@@ -8,7 +8,6 @@ from multiprocessing import Process
 #pyautogui.PAUSE = 1
 pyautogui.FAILSAFE = False
 
-
 class Window:
     top = 0
     left = 0
@@ -17,12 +16,6 @@ class Window:
     width = 0
     height = 0
     blockSize = 86
-
-    #top left of person
-    # redundant -> win32gui Window detection: left wrong by 8px, top wrong by 6 px;
-
-    #border left right bottom =
-    # Window bar height = 31px
 
 colorRGB ={
     'doorGreyBorder' : (162, 162, 162),
@@ -37,8 +30,6 @@ colorRGB ={
 def colorValue(which):
     c = colorRGB[which]
     return c[0]+c[1]+c[2]
-
-
 
 
 Speeds ={
@@ -57,10 +48,14 @@ Speeds ={
     'jump2' : 0.1,
     'jump3' : 0.1,
     'delay' : 1,
+    "mouseCenter":0.3,
+    "mouseTop":0.3,
+    "mouseTop2":0.3,
+    "mouseBottom":0.3,
+    "mouseBottom":0.3,
+    "mouseTop2punch6":0.928,
+    "mouseTop2punch6":0.928
 }
-
-
-
 
 def getWindow(hwnd, extra):
 
@@ -86,83 +81,22 @@ def getWindow(hwnd, extra):
 def mouseMove(x,y):
     pyautogui.moveTo(x+Window.left,y+Window.top)
 
-def do(which):
-    print(which)
-    def keyDown(key, whichSpeed):
-        pyautogui.keyDown(key)
-        time.sleep(Speeds[whichSpeed])
-        pyautogui.keyUp(key)
+def mouseClick(x,y):
+    pyautogui.click(x + Window.left, y + Window.top)
 
 
-
-    #punch
-    if (which == "punch6"):
-        keyDown('space', which)
-        return
-    if (which == "punch4"):
-        keyDown('space', which)
-        return
-    if (which == "punch3"):
-        keyDown('space', which)
-        return
-
-    #move
-    if (which == "right"):
-        keyDown(which,which)
-        return
-    if (which == "left"):
-        keyDown(which,which)
-        return
-    if (which == "turnLeft"):
-        keyDown("left",which)
-        return
-    if (which == "turnRight"):
-        keyDown("right", which)
-        return
-
-        # jump
-    if (which == "jump"):
-        keyDown('up', which)
-        return
-    if (which == "jump2"):
-        keyDown('up', which)
-        return
-    if (which == "jump3"):
-        keyDown('up', which)
-        return
-    #mouse
-    def mouseDown(multiX,multiY):
-        coordinates = getPlayerCoordinates()
-        bl = Window.blockSize
-        x = coordinates[0]+bl*multiX
-        y = coordinates[1]+bl*multiY
-        pyautogui.click(x, y)
-
-    if which == "mouseCenter":
-        mouseDown(0,0)
-        return
-    if which == "mouseTop":
-        mouseDown(0,-1)
-        return
-    if which == "mouseTop2":
-        mouseDown(0, -2)
-        return
-    if which == "mouseBottom":
-        mouseDown(0, 1)
-        return
-    if which == "mouseBottom2":
-        mouseDown(0, 2)
-        return
-
-    #if which == selectHand:
-    #if which == selectSeeds:
-    #if which == selectBlocks
-
-def getPlayerCoordinates(divider = 5) -> object:
+def getPlayerCoordinates(divider = 1):
     img = screenshot(Window.left,Window.top,Window.right,Window.bottom)
     #Window.width,Window.height,Window.blockSize
     bl = Window.blockSize
-    step = int(bl/divider)
+    step = 0
+    def makeStep():
+        nonlocal step,bl,divider
+        step = int(bl/divider)
+
+    step = step if step > 2 else 2
+
+    makeStep()
     c1 = colorRGB['playerColor1']
     c2 = colorRGB['playerColor2']
     c3 = colorRGB['playerColor3']
@@ -176,40 +110,33 @@ def getPlayerCoordinates(divider = 5) -> object:
     imgY = 0
 
     def findPerson():
-        nonlocal sum,sum1,sum2,sum3,sum4,c1,c2,c3,c4,imgX,imgY,step
+        nonlocal sum,sum1,sum2,sum3,sum4,c1,c2,c3,c4,imgX,imgY,step,divider
         for y in range(step,Window.height,step):
             for x in range(step,Window.width,step):
                 px = img.getpixel((x,y))
                 sum = px[0]+px[1]+px[2]
                 if sum == sum2 or sum == sum1 or sum == sum3 or sum == sum4:
                     if px == c2 or px == c1 or px == c3 or px ==c4:
-                       # pyautogui.moveTo(x, y + Window.top)
                        imgX = x
                        imgY = y
-                       return False
-                       # for x2 in range(x,bl,-1):
-                        #    px = img.getpixel((x, y))
-        return True
+                       return
+        divider +=1
+        makeStep()
+        findPerson()
 
-    if findPerson():
-        getPlayerCoordinates(divider+1)
-        return
+    findPerson()
+   # findPerson()
+   # mouseMove(imgX,imgY)
+   # time.sleep(3)
+   # findPerson()
+
 
     #get center of player
     centerY1 =0
     centerY2 = 0
     centerX1 = 0
     centerX2 = 0
-    #for x in range(imgX - bl, imgX + bl, 2):
-     #   px = img.getpixel((x, imgY))
-      #  sum = px[0] + px[1] + px[2]
-       # if firstX and (sum == sum2 or sum == sum1 or sum == sum3 or sum == sum4):
-        #    firstX = False
-         #   centerX1 = x
-        #if not firstX and sum != sum2 and sum != sum1 and sum != sum3 and sum != sum4:
-         #   print(sum,sum1,sum2,sum3,sum4,px,c1,c2,c3,c4)
-          #  centerX2 = x
-           # break
+
     imgH = Window.height
     imgW = Window.width
 
@@ -227,40 +154,39 @@ def getPlayerCoordinates(divider = 5) -> object:
     if minusBlY < 0:
         minusBlY = 0
 
-    for x in range(minusBlX, imgX, 4):
+    for x in range(minusBlX, imgX, 3):
         px = img.getpixel((x, imgY))
         sum = px[0] + px[1] + px[2]
         if sum == sum2 or sum == sum1 or sum == sum3 or sum == sum4:
+            print("trigger X1")
             centerX1=x
             break
-    for x in range(plusBlX, imgX, -4):
+    for x in range(plusBlX, imgX, -3):
         px = img.getpixel((x, imgY))
         sum = px[0] + px[1] + px[2]
         if sum == sum2 or sum == sum1 or sum == sum3 or sum == sum4:
+            print("trigger X2")
             centerX2=x
             break
     centerXX = centerX1 + (centerX2 - centerX1) / 2
 
-    for y in range(minusBlY, imgY, 4):
+    for y in range(minusBlY, imgY, 3):
         px = img.getpixel((centerXX, y))
         sum = px[0] + px[1] + px[2]
-        if sum == sum2 or sum == sum1 or sum == sum3 or sum == sum4:
+        if abs(sum-sum2)<4 or abs(sum-sum1)<4 or abs(sum-sum3)<4 or abs(sum-sum4)<4:
+            print("trigger Y1")
             centerY1 = y
             break
 
-    for y in range(plusBlY, imgY, -4):
+    for y in range(plusBlY, imgY, -3):
         px = img.getpixel((centerXX, y))
         sum = px[0] + px[1] + px[2]
-        if sum == sum2 or sum == sum1 or sum == sum3 or sum == sum4:
+        if abs(sum - sum2) < 4 or abs(sum - sum1) < 4 or abs(sum - sum3) < 4 or abs(sum - sum4) < 4:
+            print("trigger Y2")
             centerY2 = y
             break
     centerYY = centerY1+(centerY2-centerY1)/2
-
-    print("Center of player: ",centerXX,centerYY)
     return (centerXX,centerYY)
-
-
-
 
 def getBlockSize():
 
@@ -330,6 +256,77 @@ def getBlockSize():
     print("player colors: ",colorRGB['playerColor1'],colorRGB['playerColor2'],colorRGB['playerColor3'],colorRGB['playerColor4'])
     print("blockSize:",Window.blockSize)
 
+def do(which):
+    print(which)
+    def keyDown(key, whichSpeed):
+        pyautogui.keyDown(key)
+        time.sleep(Speeds[whichSpeed])
+        pyautogui.keyUp(key)
+
+    #punch
+    if (which == "punch6"):
+        keyDown('space', which)
+        return
+    if (which == "punch4"):
+        keyDown('space', which)
+        return
+    if (which == "punch3"):
+        keyDown('space', which)
+        return
+
+    #move
+    if (which == "right"):
+        keyDown(which,which)
+        return
+    if (which == "left"):
+        keyDown(which,which)
+        return
+    if (which == "turnLeft"):
+        keyDown("left",which)
+        return
+    if (which == "turnRight"):
+        keyDown("right", which)
+        return
+
+        # jump
+    if (which == "jump"):
+        keyDown('up', which)
+        return
+    if (which == "jump2"):
+        keyDown('up', which)
+        return
+    if (which == "jump3"):
+        keyDown('up', which)
+        return
+    #mouse
+    def mouseClickL(multiX,multiY):
+        co = getPlayerCoordinates()
+        #print("player Center",co)
+        bl = Window.blockSize
+        print(co)
+        mouseMove(co[0],co[1])
+        #mouseClick(co[0]+(bl*multiX),co[1]+(bl*multiY))
+        #mouseMove(co[0]+(bl*multiX),co[1]+(bl*multiY))
+
+    if which == "mouseCenter":
+        mouseClickL(0,0)
+        return
+    if which == "mouseTop":
+        mouseClickL(0,-1)
+        return
+    if which == "mouseTop2":
+        mouseClickL(0, -2)
+        return
+    if which == "mouseBottom":
+        mouseClickL(0, 1)
+        return
+    if which == "mouseBottom2":
+        mouseClickL(0, 2)
+        return
+
+    #if which == selectHand:
+    #if which == selectSeeds:
+    #if which == selectBlocks
 
 #[action index[repeat index]]
 def mover(moveArr,actionIndex,repeatIndex):
@@ -340,13 +337,13 @@ def mover(moveArr,actionIndex,repeatIndex):
     if repeatIndex == move[0]:
         mover(moveArr,actionIndex+1,0)
         return
-    #afterDelay = Speeds[move[1]]
-
+    speed1 = Speeds[move[1]]
+    speed2 = Speeds[move[1]]
+    delay = speed1 if speed1>speed2 else speed2
     for i in range(1,len(move)):
         do(move[i])
-    time.sleep(0.2)
+    time.sleep(2)
     mover(moveArr,actionIndex,repeatIndex+1)
-
 
 def screenshot(x1,y1,x2,y2):
     return ImageGrab.grab((x1,y1,x2,y2))
@@ -356,15 +353,21 @@ def main():
     win32gui.EnumWindows(getWindow, None)
 
     getBlockSize()
-
+    mouseClick(0,0)
   #  time1 =  time.time()
 
    # print(time.time()-time1)
-    arr = [[1,"mouseTop"]]
-    mover(arr,0,0)
-  #  pyautogui.moveTo(coord[0],coord[1])
+    #arr = [[2,"right"],[96,"mouseCenter","right"]]
+    #arr = [[1,"mouseCenter"]]
    # mover(arr,0,0)
+    co = getPlayerCoordinates()
+   # mouseMove(co[0],co[1])
+  #  pyautogui.moveTo(coord[0],coord[1])
+    arr = [[2,"right"],[5,"mouseCenter","right"]]
+    mover(arr,0,0)
   #  img = screenshot(Window.left,Window.top,Window.right,Window.bottom)
    # img.save("D:/growtopia2.bmp")
+
+
 
 main()
